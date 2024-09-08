@@ -3,15 +3,12 @@ import { ArgumentsHost, ExceptionFilter, HttpException } from '@nestjs/common';
 import ResponseCommon from 'src/common/response.common';
 import LoggerService from 'src/logger/logger.service';
 
+const logger = new LoggerService('catch');
+
 /**
  * Http Exception Filter class
  */
 class HttpExceptionFilter implements ExceptionFilter {
-  /**
-   * @param {LoggerService} loggerService LoggerService
-   */
-  constructor(private readonly loggerService: LoggerService) {}
-
   /**
    * @param {HttpException} exception HttpException
    * @param {ArgumentsHost} host ArgumentsHost
@@ -29,7 +26,7 @@ class HttpExceptionFilter implements ExceptionFilter {
     // eslint-disable-next-line no-console
     console.log(exceptionResponse);
 
-    this.loggerService.handlErrorLog(errorMessage);
+    logger.handlErrorLog(errorMessage);
     ResponseCommon.handleError(status, errorMessage, response);
   }
 }

@@ -11,16 +11,13 @@ import AppService from './app.service';
 import LoggerService from './logger/logger.service';
 import ResponseCommon from './common/response.common';
 
+const logger = new LoggerService('app');
+
 /**
  * App Controller class
  */
 @Controller('/api')
 class AppController {
-  /**
-   * Constructor
-   */
-  constructor(private readonly loggerService: LoggerService) {}
-
   /**
    * @param {Object} res Response
    * @return {string} Response<string>
@@ -28,7 +25,7 @@ class AppController {
   @Get()
   getHello(@Res() res: Response): Response<string> {
     try {
-      this.loggerService.handleInfoLog('log app controller');
+      logger.handleInfoLog('log app controller');
 
       return ResponseCommon.handleSuccess(
         HttpStatus.OK,
