@@ -1,0 +1,65 @@
+name: 📝 Validate PR Description
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+jobs:
+  validate-pr-body:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate PR Description
+        shell: bash
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          CLEAN_BODY=$(echo "$PR_BODY" | sed 's/\r$//')
+
+          if [ -z "${CLEAN_BODY// }" ]; then
+            echo "❌ PR description is completely empty." >&2
+            exit 1
+          fi
+
+          REQUIRED_FIELDS=("## Description of Task?" "## Any background context you want to provide?" "## What are the relevant user stories or tasks links from Azure DevOps?")
+          OPTIONAL_FIELD="## Screenshots (if appropriate)"
+
+          current_field=""
+          declare -A field_content
+          errors=()
+
+          # Parse PR body
+          while IFS= read -r line; do
+            trimmed=$(echo "$line" | xargs)
+            for field in "${REQUIRED_FIELDS[@]}" "$OPTIONAL_FIELD"; do
+              if [[ "${trimmed,,}" == "${field,,}" ]]; then
+                current_field="$field"
+                field_content["$current_field"]=""
+                continue 2
+              fi
+            done
+
+            if [ -n "$current_field" ]; then
+              if [ -z "${field_content[$current_field]}" ]; then
+                field_content["$current_field"]="$trimmed"
+              else
+                field_content["$current_field"]="${field_content[$current_field]}"$'\n'"$trimmed"
+              fi
+            fi
+          done <<< "$CLEAN_BODY"
+
+          for field in "${REQUIRED_FIELDS[@]}"; do
+            content="${field_content[$field]}"
+            if [ -z "$content" ]; then
+              errors+=("❌ Missing content for: $field")
+            elif echo "$content" | grep -iq "^N/A$"; then
+              errors+=("❌ Field '$field' has invalid content: N/A")
+            fi
+          done
+
+          if [ ${#errors[@]} -gt 0 ]; then
+            printf "%s\n" "${errors[@]}" >&2
+            exit 1
+          fi
+
+          echo "✅ PR description is valid."

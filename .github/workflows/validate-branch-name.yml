@@ -1,0 +1,35 @@
+name: 🔀 Validate Branch Name
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  validate-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Branch Name Format
+        shell: bash
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: |
+          echo "🔍 Validating branch name: $BRANCH_NAME"
+
+          # Allowed types: ft, bg, ch, rf
+          # Format: {type}-{summary}-{id}
+          BRANCH_REGEX='^(ft|bg|ch|rf)-[a-z0-9]+(-[a-z0-9]+){1,2}-[0-9]+$'
+
+          if [[ "$BRANCH_NAME" =~ $BRANCH_REGEX ]]; then
+            echo "✅ Branch name format is valid."
+          else
+            echo "❌ Branch name format is invalid: \"$BRANCH_NAME\""
+            echo ""
+            echo "Expected format: {story-type}-{summary}-{task-id}"
+            echo "Where:"
+            echo "  - story-type: ft, bg, ch, or rf"
+            echo "  - summary: 2–3 lowercase words, dash-separated"
+            echo "  - task-id: numeric Azure DevOps task ID"
+            echo ""
+            echo "Example: ft-add-auth-token-4521"
+            exit 1
+          fi

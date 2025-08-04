@@ -1,0 +1,30 @@
+name: 🧪 Validate Commit Message
+
+on:
+  push:
+
+jobs:
+  validate-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed to see full commit history
+
+      - name: Get last non-merge commit message on current branch
+        id: get_commit
+        run: |
+          LAST_COMMIT=$(git log --no-merges -1 --pretty=%s)
+          echo "📝 Commit subject: $LAST_COMMIT"
+          echo "commit_msg=$LAST_COMMIT" >> $GITHUB_OUTPUT
+
+      - name: Validate commit message
+        run: |
+          echo "Validating: '${{ steps.get_commit.outputs.commit_msg }}'"
+          if [[ ! "${{ steps.get_commit.outputs.commit_msg }}" =~ ^(feat|fix|chore|docs|style|refactor|test|perf|ci|build|revert)(\(.+\))?:\ .+ ]]; then
+            echo "❌ Invalid commit message format."
+            echo "💡 Expected format: 'type(scope): description', e.g., 'feat(auth): add login API'"
+            exit 1
+          fi
+        shell: bash
